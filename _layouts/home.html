@@ -1,84 +1,74 @@
-
-<link type="text/css" rel="stylesheet" href="{{ site.baseurl | prepend: site.url }}/assets/css/lightslider.css" />
-<link type="text/css" rel="stylesheet" href="{{ site.baseurl | prepend: site.url }}/assets/css/box.css" />
-<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-<script src="{{ site.baseurl | prepend: site.url }}/assets/js/lightslider.js"></script>
-
-
 <html>
+<head>
+  <link rel="shortcut icon" href="">
+  <link type="text/css" rel="stylesheet" href="{{ site.baseurl | prepend: site.url }}/assets/css/lightslider.css" />
+  <link type="text/css" rel="stylesheet" href="{{ site.baseurl | prepend: site.url }}/assets/css/box.css" />
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="{{ site.baseurl | prepend: site.url }}/assets/js/lightslider.js"></script>
+</head>
+
+
 <body>
   <p>
     <img src="{{ site.baseurl }}/assets/images/music-on.png" onclick="mute()" id="volumeButton" width="1%" height="auto">
-    <img src="{{ site.baseurl }}/assets/images/shuffle.png" onclick="suffle()" id="volumeButton" width="1%" height="auto"><br>
+    <img src="{{ site.baseurl }}/assets/images/shuffle.png" onclick="suffle()" id="shuffleButton" width="1%" height="auto"><br>
     <label style="color:#FFFFFF;">Now Playing: </label><i id="songTitle" style="color:#FFFFFF;"></i>
   </p>
   <audio id="myAudio" autoplay>
         <source id="song" src="">
   </audio>
-<div class=container>
+<div>
+  <div class="row container" id="container" style="padding-left: 5%; padding-right: 5%;">
 
-  {% for character in site.data.characters %}
-
-  <div style="padding-top: 100px;">
-    <label for="name" style="color:#FFFFFF;">{{ character.Name }}</label> <br>
-    <i for="name" style="color:#FFFFFF;">{{ character.Series }}</i> <br>
-    <span style="color:#FFFFFF;">Kakera: {{ character.Value }}</span>
-    <img src="{{ site.baseurl }}/assets/images/kakera.png" class="kakera"/>
-  </div>
-
-  <div class="imagecontainer" name="{{ character.Name }}" style="">
-
-    {% for image in site.static_files %}
-        {% if image.path contains character.Name %}
-            {% assign imagepath = image.path | split: "/" %}
-            <img src="{{ site.baseurl }}{{ image.path }}" class="{{ character.Name }} characterImg" />
-        {% endif %}
-    {% endfor %}
 
   </div>
-  {% endfor %}
+<div>
+
+
+<div class="box">
+<div class="childBox">
+</div>
+<div class="childBox">
+</div>
+<div class="childBox">
+</div>
+<div class="childBox">
+</div>
+<div class="childBox">
+</div>
+<div class="childBox">
+</div>
+<div class="childBox">
+</div>
+<div class="childBox">
+</div>
+<div class="childBox">
+</div>
+<div class="childBox">
+</div>
 </div>
 
 {% include open-embed.html %}
-<div class="box">
-<div>
-</div>
-<div>
-</div>
-<div>
-</div>
-<div>
-</div>
-<div>
-</div>
-<div>
-</div>
-<div>
-</div>
-<div>
-</div>
-<div>
-</div>
-<div>
-</div>
-</div>
-
-
 </body>
 </html>
  <style>
+  .row .column {
+    float: left;
+    width: 30%;
+    padding: 10px;
+  }
   .imagecontainer{
      /* border-top: 5px dotted #34495e; */
      /* border-bottom: 5px dotted #34495e; */
   }
   .kakera{
-    width: 1% !important;
+    width: 4% !important;
     height: auto !important;
     font-weight: bold;
     margin-bottom: -5px;
   }
   .lSPager{
-    visibility: hidden;
+    /* visibility: hidden; */
   }
   .characterImg{
     width: 225px;
@@ -86,7 +76,18 @@
     transition: transform .2s; /* Animation */
   }
   .characterImg:hover {
-    transform: scale(1.5); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+    /* transform: scale(1.5); */
+  }
+  .container{
+    padding-left: "100px" !important;
+    padding-right: "100px" !important;
+  }
+  .row:after {
+    content: "";
+    display: table;
+    clear: both;
+    /* padding-left: "100px";
+    padding-right: "100px"; */
   }
   body {
     /* background-color: #2c3e50; */
@@ -95,8 +96,7 @@
  </style>
 
  <script type="text/javascript">
-
-
+  sortByName();
   function mute() {
      var vol = document.getElementById("myAudio");
       if (document.getElementById("volumeButton").src.indexOf('music-on.png') != -1)
@@ -110,7 +110,58 @@
           vol.play();
       }
   }
+  function createList(){
 
+    sortByName();
+
+  }
+  function sortByName(){
+
+    //clear grid
+    var container = document.getElementById("container");
+    container.innerHTML = '';
+
+    var newInnerHTML = '';
+    var i = 0;
+
+    {% assign characters = site.data.characters %}
+      {% for character in characters %}
+      if(i % 3 == 0){
+        console.log("3: " + i);
+        newInnerHTML += '<div class="row">'
+      }
+      newInnerHTML += "<div class='character-data column' stye='margin-right: 10px;'> <div id='{{ character.Name }}' style='padding-top: 100px; text-align:center;'> <label for='name' style='color:#FFFFFF;'>{{ character.Name }}</label> <br> <i for='name' style='color:#FFFFFF;'>{{ character.Series | truncate: 66}}</i> <br> <span style='color:#FFFFFF;'>Kakera: {{ character.Value }}</span> <img src='{{ site.baseurl }}/assets/images/kakera.png' class='kakera'/> </div> <div class='imagecontainer' name='{{ character.Name }}' style=''>";
+
+      {% for image in site.static_files %} //Get grab images for each character
+        {% assign fileName = character.Name | append: "/" %}
+            {% if image.path contains fileName %}
+                newInnerHTML += '<img src="{{ site.baseurl }}{{ image.path }}" class="{{ character.Name }} characterImg" />'
+            {% endif %}
+      {% endfor %}
+
+      i++;
+      if((i % 3 == 0)){
+        newInnerHTML += '</div>'
+      }
+        newInnerHTML += '</div> </div>'
+    {% endfor %}
+
+    //Append List
+    if(document.getElementById("container") != null){
+      var container = document.getElementById("container");
+      container.innerHTML += newInnerHTML;
+    }
+
+  }
+
+  function sortBySeries(){
+    {% assign characters = site.data.characters | sort: 'Series' %}
+
+  }
+  function sortByValue(){
+    {% assign characters = site.data.characters | sort: 'Value' | reverse  %}
+
+  }
   function suffle() {
      var songs = [{% for songs in site.static_files %}
                    {% if songs.path contains ".mp3" %}
@@ -118,9 +169,9 @@
                    {% endif %}
                  {% endfor %}];
       var currentSong = document.getElementById("song").src;
-      var currentSong = currentSong.replace("{{site.url}}", "");
-      var currentSong = currentSong.replace("{{site.baseurl}}", "");
-      var currentSong = currentSong.replace("%20", " ");
+      currentSong = currentSong.replace("{{site.url}}", "");
+      currentSong = currentSong.replace("{{site.baseurl}}", "");
+      currentSong = currentSong.replace("%20", " ");
       var randomNum = Math.floor(Math.random() * songs.length);
 
       while(currentSong == songs[randomNum]){

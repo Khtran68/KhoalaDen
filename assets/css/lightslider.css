@@ -233,8 +233,6 @@
     direction: rtl;
 }
 .lSSlideOuter .lightSlider, .lSSlideOuter .lSPager {
-    border-top: 5px dotted #34495e;
-    border-bottom: 5px dotted #34495e;
     padding-left: 0;
     list-style: none outside none;
 }
