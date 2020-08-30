@@ -1,19 +1,33 @@
 <html>
 <head>
-  <link rel="shortcut icon" href="">
+  <link rel="shortcut icon" href="#" />
   <link type="text/css" rel="stylesheet" href="{{ site.baseurl | prepend: site.url }}/assets/css/lightslider.css" />
   <link type="text/css" rel="stylesheet" href="{{ site.baseurl | prepend: site.url }}/assets/css/box.css" />
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-  <script src="{{ site.baseurl | prepend: site.url }}/assets/js/lightslider.js"></script>
+  <!-- <script src="{{ site.baseurl | prepend: site.url }}/assets/js/lightslider.js"></script> -->
 </head>
 
 
 <body>
-  <p>
-    <img src="{{ site.baseurl }}/assets/images/music-on.png" onclick="mute()" id="volumeButton" width="1%" height="auto">
-    <img src="{{ site.baseurl }}/assets/images/shuffle.png" onclick="suffle()" id="shuffleButton" width="1%" height="auto"><br>
-    <label style="color:#FFFFFF;">Now Playing: </label><i id="songTitle" style="color:#FFFFFF;"></i>
-  </p>
+  <div class="header">
+    <div class="sort-btn">
+      <button id="sort-btn" onclick="checkType();">Sort List</button>
+    </div>
+    <div class="select-dropdown">
+      <select id="select-menu">
+        <option value="0" disabled selected>Select Sort Option</option>
+        <option value="1">Series</option>
+        <option value="2">Kakera value</option>
+        <option value="3">A-Z</option>
+        <option value="4">Z-A</option>
+      </select>
+    </div>
+    <p>
+      <img src="{{ site.baseurl }}/assets/images/music-on.png" onclick="mute()" id="volumeButton" width="1%" height="auto">
+      <img src="{{ site.baseurl }}/assets/images/shuffle.png" onclick="suffle()" id="shuffleButton" width="1%" height="auto"><br>
+      <label style="color:#FFFFFF;" value=''>Now Playing: </label><i id="songTitle" style="color:#FFFFFF;"></i>
+    </p>
+  </div>
   <audio id="myAudio" autoplay>
         <source id="song" src="">
   </audio>
@@ -89,14 +103,52 @@
     /* padding-left: "100px";
     padding-right: "100px"; */
   }
+  .sort-btn {
+    margin-top:23px;
+    margin-right: 50px;
+    margin-left: 50px;
+    float: right;
+  }
+  .select-dropdown {
+    margin-top:23px;
+    float: right;
+  }
   body {
     /* background-color: #2c3e50; */
-    background: linear-gradient(180deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(2,0,36,1) 100%);
+    /* background: linear-gradient(180deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(2,0,36,1) 100%); */
+    border: 2px solid black;
+    background: url("{{ site.baseurl }}/assets/images/background/wp5601832-full-hd-anime-wallpapers.jpg");
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: 100% auto;
   }
  </style>
 
  <script type="text/javascript">
-  sortByName();
+
+  suffle(); //Initiate Music
+
+  checkType(); // Display Characters
+
+  function loadLightSlider(){
+    $.getScript( '{{ site.baseurl | prepend: site.url }}/assets/js/lightslider.js', function() {
+      $('.imagecontainer').lightSlider({
+       keyPress:false,
+       autoWidth:true,
+       auto:false,
+       speed:1600,
+       controls:false,
+       pauseOnHover:true,
+       pause: 5000,
+       item:4,
+       loop:false,
+       onSliderLoad: function() {
+           $('#content-slider').removeClass('cS-hidden');
+       }
+      });
+    } );
+  }
+
   function mute() {
      var vol = document.getElementById("myAudio");
       if (document.getElementById("volumeButton").src.indexOf('music-on.png') != -1)
@@ -110,12 +162,107 @@
           vol.play();
       }
   }
-  function createList(){
 
-    sortByName();
+  function suffle() {
+     var songs = [{% for songs in site.static_files %}
+                   {% if songs.path contains ".mp3" %}
+                     "{{ songs.path }}",
+                   {% endif %}
+                 {% endfor %}];
+      var currentSong = document.getElementById("song").val;
+      var randomNum = Math.floor(Math.random() * songs.length);
 
+      while(currentSong == randomNum){ //Play different song
+        randomNum = Math.floor(Math.random() * songs.length);
+      }
+
+      var nowPlaying = removeMP3str(songs[randomNum]);
+      document.getElementById("song").src = "{{ site.baseurl }}"+songs[randomNum];
+      document.getElementById("song").val = randomNum;
+      var vol = document.getElementById("myAudio");
+      vol.load();
+      document.getElementById("songTitle").innerHTML = nowPlaying;
+      vol.volume = 0.1;
+      vol.onended = function(){
+          randomNum = Math.floor(Math.random() * songs.length);
+          while(currentSong == randomNum){ //Play different song
+            console.log("song changed: " + currentSong);
+            randomNum = Math.floor(Math.random() * songs.length);
+          }
+          document.getElementById("song").src = "{{ site.baseurl }}"+songs[randomNum];
+          document.getElementById("song").val = randomNum;
+          nowPlaying = removeMP3str(songs[randomNum]);
+          vol.load();
+          document.getElementById("songTitle").innerHTML = nowPlaying;
+      };
   }
-  function sortByName(){
+
+   function checkType(){
+     var script = document.createElement("script");
+     script.type = "text/javascript";
+     script.src = "{{ site.baseurl | prepend: site.url }}/assets/js/lightslider.js";
+     document.getElementsByTagName("head")[0].appendChild(script);
+
+     var selectOption = document.getElementById("select-menu").selectedIndex;
+
+     switch (document.getElementById("select-menu").selectedIndex) {
+       case 0:   //Default Sort By Series
+         sortSeries();
+         break;
+       case 1:   //Sort By Series
+         sortSeries();
+         break;
+       case 2:   // Sort By Value
+         sortValue();
+         break;
+       case 3: // Sort By A-Z
+         sortName();
+         break;
+       case 4: // Sort By Z-A
+         sortNameRev();
+         break;
+     }
+     loadLightSlider();
+   }
+
+   function sortSeries(){
+
+     //clear grid
+     var container = document.getElementById("container");
+     container.innerHTML = '';
+
+     var newInnerHTML = '';
+     var i = 0;
+
+       {% assign characters = site.data.characters | sort: 'Series' %} //Series
+       {% for character in characters %}
+       if(i % 3 == 0){
+         newInnerHTML += '<div class="row">'
+       }
+       newInnerHTML += "<div class='character-data column' stye='margin-right: 10px;'> <div id='{{ character.Name }}' style='padding-top: 100px; text-align:center;'> <label for='name' style='color:#FFFFFF;'>{{ character.Name }}</label> <br> <i for='name' style='color:#FFFFFF;'>{{ character.Series | truncate: 66}}</i> <br> <span style='color:#FFFFFF;'>Kakera: {{ character.Value }}</span> <img src='{{ site.baseurl }}/assets/images/kakera.png' class='kakera'/> </div> <div class='imagecontainer' name='{{ character.Name }}' style=''>";
+
+       {% for image in site.static_files %} //Get grab images for each character
+         {% assign fileName = character.Name | append: "/" %}
+             {% if image.path contains fileName %}
+                 newInnerHTML += '<img src="{{ site.baseurl }}{{ image.path }}" class="{{ character.Name }} characterImg" />'
+             {% endif %}
+       {% endfor %}
+
+       i++;
+       if((i % 3 == 0)){
+         newInnerHTML += '</div>'
+       }
+         newInnerHTML += '</div> </div>'
+     {% endfor %}
+
+     //Append List
+     if(document.getElementById("container") != null){
+       var container = document.getElementById("container");
+       container.innerHTML += newInnerHTML;
+     }
+  }
+
+  function sortValue(){
 
     //clear grid
     var container = document.getElementById("container");
@@ -124,10 +271,9 @@
     var newInnerHTML = '';
     var i = 0;
 
-    {% assign characters = site.data.characters %}
+      {% assign characters = site.data.characters | sort: 'Value' | reverse %}// Value
       {% for character in characters %}
       if(i % 3 == 0){
-        console.log("3: " + i);
         newInnerHTML += '<div class="row">'
       }
       newInnerHTML += "<div class='character-data column' stye='margin-right: 10px;'> <div id='{{ character.Name }}' style='padding-top: 100px; text-align:center;'> <label for='name' style='color:#FFFFFF;'>{{ character.Name }}</label> <br> <i for='name' style='color:#FFFFFF;'>{{ character.Series | truncate: 66}}</i> <br> <span style='color:#FFFFFF;'>Kakera: {{ character.Value }}</span> <img src='{{ site.baseurl }}/assets/images/kakera.png' class='kakera'/> </div> <div class='imagecontainer' name='{{ character.Name }}' style=''>";
@@ -151,89 +297,86 @@
       var container = document.getElementById("container");
       container.innerHTML += newInnerHTML;
     }
+ }
 
+ function sortName(){
+
+   //clear grid
+   var container = document.getElementById("container");
+   container.innerHTML = '';
+
+   var newInnerHTML = '';
+   var i = 0;
+
+     {% assign characters = site.data.characters | sort: 'Name' %}// A-Z
+     {% for character in characters %}
+     if(i % 3 == 0){
+       newInnerHTML += '<div class="row">'
+     }
+     newInnerHTML += "<div class='character-data column' stye='margin-right: 10px;'> <div id='{{ character.Name }}' style='padding-top: 100px; text-align:center;'> <label for='name' style='color:#FFFFFF;'>{{ character.Name }}</label> <br> <i for='name' style='color:#FFFFFF;'>{{ character.Series | truncate: 66}}</i> <br> <span style='color:#FFFFFF;'>Kakera: {{ character.Value }}</span> <img src='{{ site.baseurl }}/assets/images/kakera.png' class='kakera'/> </div> <div class='imagecontainer' name='{{ character.Name }}' style=''>";
+
+     {% for image in site.static_files %} //Get grab images for each character
+       {% assign fileName = character.Name | append: "/" %}
+           {% if image.path contains fileName %}
+               newInnerHTML += '<img src="{{ site.baseurl }}{{ image.path }}" class="{{ character.Name }} characterImg" />'
+           {% endif %}
+     {% endfor %}
+
+     i++;
+     if((i % 3 == 0)){
+       newInnerHTML += '</div>'
+     }
+       newInnerHTML += '</div> </div>'
+   {% endfor %}
+
+   //Append List
+   if(document.getElementById("container") != null){
+     var container = document.getElementById("container");
+     container.innerHTML += newInnerHTML;
+   }
+}
+
+function sortNameRev(){
+
+  //clear grid
+  var container = document.getElementById("container");
+  container.innerHTML = ' ';
+
+  var newInnerHTML = '';
+  var i = 0;
+
+    {% assign characters = site.data.characters | sort: 'Name' | reverse %}//Z-A
+    {% for character in characters %}
+    if(i % 3 == 0){
+      newInnerHTML += '<div class="row">'
+    }
+    newInnerHTML += "<div class='character-data column' stye='margin-right: 10px;'> <div id='{{ character.Name }}' style='padding-top: 100px; text-align:center;'> <label for='name' style='color:#FFFFFF;'>{{ character.Name }}</label> <br> <i for='name' style='color:#FFFFFF;'>{{ character.Series | truncate: 66}}</i> <br> <span style='color:#FFFFFF;'>Kakera: {{ character.Value }}</span> <img src='{{ site.baseurl }}/assets/images/kakera.png' class='kakera'/> </div> <div class='imagecontainer' name='{{ character.Name }}' style=''>";
+
+    {% for image in site.static_files %} //Get grab images for each character
+      {% assign fileName = character.Name | append: "/" %}
+          {% if image.path contains fileName %}
+              newInnerHTML += '<img src="{{ site.baseurl }}{{ image.path }}" class="{{ character.Name }} characterImg" />'
+          {% endif %}
+    {% endfor %}
+
+    i++;
+    if((i % 3 == 0)){
+      newInnerHTML += '</div>'
+    }
+      newInnerHTML += '</div> </div>'
+  {% endfor %}
+
+  //Append List
+  if(document.getElementById("container") != null){
+    var container = document.getElementById("container");
+    container.innerHTML += newInnerHTML;
   }
-
-  function sortBySeries(){
-    {% assign characters = site.data.characters | sort: 'Series' %}
-
-  }
-  function sortByValue(){
-    {% assign characters = site.data.characters | sort: 'Value' | reverse  %}
-
-  }
-  function suffle() {
-     var songs = [{% for songs in site.static_files %}
-                   {% if songs.path contains ".mp3" %}
-                     "{{ songs.path }}",
-                   {% endif %}
-                 {% endfor %}];
-      var currentSong = document.getElementById("song").src;
-      currentSong = currentSong.replace("{{site.url}}", "");
-      currentSong = currentSong.replace("{{site.baseurl}}", "");
-      currentSong = currentSong.replace("%20", " ");
-      var randomNum = Math.floor(Math.random() * songs.length);
-
-      while(currentSong == songs[randomNum]){
-        var randomNum = Math.floor(Math.random() * songs.length);
-      }
-
-      var nowPlaying = removeMP3str(songs[randomNum]);
-      document.getElementById("song").src = "{{ site.baseurl }}"+songs[randomNum];
-      document.getElementById("songTitle").innerHTML = nowPlaying;
-      var vol = document.getElementById("myAudio");
-      vol.load();
-      vol.volume = 0.1;
-      vol.onended = function(){
-          randomNum = Math.floor(Math.random() * songs.length);
-          document.getElementById("song").src = "{{ site.baseurl }}"+songs[randomNum];
-          nowPlaying = removeMP3str(songs[randomNum]);
-          document.getElementById("songTitle").innerHTML = nowPlaying;
-          vol.load();
-      };
-  }
-
-  var songs = [{% for songs in site.static_files %}
-                {% if songs.path contains ".mp3" %}
-                  "{{ songs.path }}",
-                {% endif %}
-              {% endfor %}];
-
-
-   var randomNum = Math.floor(Math.random() * songs.length);
-   var nowPlaying = removeMP3str(songs[randomNum]);
-   document.getElementById("song").src = "{{ site.baseurl }}"+songs[randomNum];
-   document.getElementById("songTitle").innerHTML = nowPlaying;
-   var vol = document.getElementById("myAudio");
-   vol.load();
-   vol.volume = 0.1;
-   vol.onended = function(){
-       randomNum = Math.floor(Math.random() * songs.length);
-       document.getElementById("song").src = "{{ site.baseurl }}"+songs[randomNum];
-       nowPlaying = removeMP3str(songs[randomNum]);
-       document.getElementById("songTitle").innerHTML = nowPlaying;
-       vol.load();
-   };
+}
 
    function removeMP3str(str){
      var nowPlaying = str;
      nowPlaying = nowPlaying.replace("/assets/music/", "");
      return nowPlaying = nowPlaying.replace(".mp3", "");
    }
-
-   $('.imagecontainer').lightSlider({
-    keyPress:false,
-    autoWidth:true,
-    auto:false,
-    speed:1600,
-    controls:false,
-    pauseOnHover:true,
-    pause: 5000,
-    item:4,
-    loop:false,
-    onSliderLoad: function() {
-        $('#content-slider').removeClass('cS-hidden');
-    }
-});
 
 </script>
